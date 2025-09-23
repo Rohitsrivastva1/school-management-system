@@ -1,0 +1,122 @@
+🏗 Proposed Architecture
+Web (Admin Panel)
+
+Frontend: Next.js
+
+Used by school admins and teachers.
+
+Admin → manages school, classes, teachers, students.
+
+Teacher → manages timetable, homework, attendance, complaints.
+
+Backend API: Express.js (REST or GraphQL)
+
+Auth (JWT or session-based).
+
+Multi-tenant (each school is a tenant → separated by school_id).
+
+Handles timetable, attendance, homework, complaints, Q&A.
+
+Connects to Postgres.
+
+Mobile App (Parents & Teachers)
+
+Built with Android Studio (since you’re targeting native Android first).
+
+Roles:
+
+Parent Login → child progress, homework, attendance, Q&A with class teacher.
+
+Teacher Login → attendance, homework upload, complaints, forwarding Q&A.
+
+Communicates with the same Express backend API.
+
+Uses Firebase Cloud Messaging (FCM) for push notifications (for homework/alerts).
+
+Database (Postgres)
+
+Multi-tenant design:
+
+users (role: admin, teacher, parent, student).
+
+schools → linked to users via school_id.
+
+classes, sections, students, teachers.
+
+attendance, timetable, homework, complaints, notifications, qa.
+
+🔑 Suggestions / Improvements
+
+Multi-Tenant Handling
+
+Keep all schools in one database (shared schema with school_id filters).
+
+Easier to manage, scale, and update.
+
+Authentication
+
+JWT (access + refresh tokens).
+
+Role-based access (admin, class teacher, subject teacher, parent).
+
+File & Media Storage
+
+Use AWS S3 or Firebase Storage for homework files, student photos.
+
+Store only file links in Postgres.
+
+Notifications
+
+Push notifications via FCM (mobile).
+
+Email notifications (via SendGrid/Mailgun) for web users (admins/teachers).
+
+Timetable Suggestion (Phase 2 feature)
+
+Start with manual timetable creation.
+
+Later: add an auto-scheduler algorithm (based on teacher availability + subject load).
+
+Dashboards
+
+Build role-based dashboards in Next.js:
+
+Admin → whole school analytics.
+
+Teacher → class-level stats.
+
+Parent → per-student progress.
+
+Future-Proofing
+
+Later, you can build an iOS app easily if you shift from pure Android Studio → Flutter.
+
+But for MVP, your Android-first approach is fine (since most parents/teachers use Android in India).
+
+🚀 Recommended MVP Development Order
+
+School Registration (Web, Next.js + Express)
+
+School signup → create classes, add teachers, bulk upload students.
+
+Teacher Portal (Web + Android)
+
+Attendance marking.
+
+Homework upload.
+
+Complaints/notifications.
+
+Parent App (Android)
+
+View attendance, timetable, homework, notifications.
+
+Q&A system with class teacher.
+
+Dashboards (Web)
+
+School admin: all classes, students, teachers overview.
+
+Class teacher: per-class stats.
+
+Parent: child’s progress.

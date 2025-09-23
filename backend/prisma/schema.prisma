@@ -1,0 +1,389 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id                String   @id @default(uuid())
+  name              String
+  address           String?
+  city              String?
+  state             String?
+  country           String  @default("India")
+  pincode           String?
+  phone             String?
+  email             String  @unique
+  website           String?
+  logoUrl           String?
+  domain            String? @unique
+  academicYearStart DateTime?
+  academicYearEnd   DateTime?
+  timezone          String  @default("Asia/Kolkata")
+  isActive          Boolean @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  users             User[]
+  classes           Class[]
+  subjects          Subject[]
+  timetable         Timetable[]
+  notifications     Notification[]
+
+  @@map("schools")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  schoolId      String
+  email         String
+  passwordHash  String
+  role          String    // admin, class_teacher, subject_teacher, parent, student
+  firstName     String
+  lastName      String
+  phone         String?
+  profileImageUrl String?
+  dateOfBirth   DateTime?
+  gender        String?   // male, female, other
+  address       String?
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  lastLogin     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  student       Student?  @relation("StudentUser")
+  teacher       Teacher?
+  studentChildren Student[] @relation("StudentParent")
+  sessions      Session[]
+  sentNotifications Notification[] @relation("NotificationSender")
+  receivedNotifications Notification[] @relation("NotificationRecipient")
+  qaMessages    QAMessage[] @relation("QAMessageParent")
+  qaReplies     QAMessage[] @relation("QAMessageTeacher")
+  complaints    Complaint[] @relation("ComplaintComplainant")
+  complaintResolutions Complaint[] @relation("ComplaintResolver")
+  attendanceMarked Attendance[] @relation("AttendanceMarker")
+  homeworkCreated Homework[] @relation("HomeworkCreator")
+  gradesCreated Grade[] @relation("GradeCreator")
+  // Additional relations
+  classTeacherOf Class[] @relation("ClassTeacher")
+  timetableAsTeacher Timetable[] @relation("TimetableTeacher")
+  complaintHandling Complaint[] @relation("ComplaintHandler")
+
+  @@unique([schoolId, email])
+  @@map("users")
+}
+
+model Class {
+  id              String   @id @default(uuid())
+  schoolId        String
+  name            String
+  section         String?
+  academicYear    String
+  classTeacherId  String?
+  maxStudents     Int      @default(40)
+  roomNumber      String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  school          School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  classTeacher    User?     @relation("ClassTeacher", fields: [classTeacherId], references: [id])
+  students        Student[]
+  attendance      Attendance[]
+  timetable       Timetable[]
+  homework        Homework[]
+  notifications   Notification[]
+
+  @@unique([schoolId, name, section, academicYear])
+  @@map("classes")
+}
+
+model Student {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  classId           String
+  rollNumber        String
+  admissionNumber   String?  @unique
+  admissionDate     DateTime
+  parentId          String?
+  fatherName        String?
+  motherName        String?
+  fatherPhone       String?
+  motherPhone       String?
+  fatherEmail       String?
+  motherEmail       String?
+  emergencyContact  String?
+  bloodGroup        String?
+  medicalConditions String?
+  transportMode     String?
+  busRoute          String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User      @relation("StudentUser", fields: [userId], references: [id], onDelete: Cascade)
+  class             Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  parent            User?     @relation("StudentParent", fields: [parentId], references: [id])
+  attendance        Attendance[]
+  homeworkSubmissions HomeworkSubmission[]
+  qaMessages        QAMessage[]
+  complaints        Complaint[]
+  grades            Grade[]
+
+  @@unique([classId, rollNumber])
+  @@map("students")
+}
+
+model Teacher {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  employeeId        String
+  qualification     String?
+  subjects          String[] // Array of subjects
+  joiningDate       DateTime
+  salary            Decimal? @db.Decimal(10, 2)
+  department        String?
+  experienceYears   Int?
+  isClassTeacher    Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, employeeId])
+  @@map("teachers")
+}
+
+model Subject {
+  id          String   @id @default(uuid())
+  schoolId    String
+  name        String
+  code        String?
+  description String?
+  isCore      Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  school      School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  timetable   Timetable[]
+  homework    Homework[]
+  grades      Grade[]
+
+  @@unique([schoolId, name])
+  @@map("subjects")
+}
+
+model Timetable {
+  id            String   @id @default(uuid())
+  schoolId      String
+  classId       String
+  subjectId     String
+  teacherId     String
+  dayOfWeek     Int      // 0=Sunday, 6=Saturday
+  periodNumber  Int
+  startTime     String   // Time format
+  endTime       String   // Time format
+  roomNumber    String?
+  academicYear  String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  class         Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject       Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher       User      @relation("TimetableTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, dayOfWeek, periodNumber, academicYear])
+  @@map("timetable")
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  studentId String
+  classId   String
+  date      DateTime @db.Date
+  status    String   // present, absent, late, excused
+  markedBy  String
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  marker    User     @relation("AttendanceMarker", fields: [markedBy], references: [id])
+
+  @@unique([studentId, date])
+  @@map("attendance")
+}
+
+model Homework {
+  id          String   @id @default(uuid())
+  classId     String
+  subjectId   String
+  teacherId   String
+  title       String
+  description String?
+  dueDate     DateTime
+  attachments Json?     // Array of file objects
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher     User     @relation("HomeworkCreator", fields: [teacherId], references: [id], onDelete: Cascade)
+  submissions HomeworkSubmission[]
+
+  @@map("homework")
+}
+
+model HomeworkSubmission {
+  id           String    @id @default(uuid())
+  homeworkId   String
+  studentId    String
+  submissionText String?
+  attachments  Json?     // Array of file objects
+  submittedAt  DateTime  @default(now())
+  gradedAt     DateTime?
+  grade        String?
+  feedback     String?
+  isLate       Boolean   @default(false)
+
+  // Relations
+  homework     Homework  @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([homeworkId, studentId])
+  @@map("homework_submissions")
+}
+
+model Notification {
+  id               String   @id @default(uuid())
+  schoolId         String
+  senderId         String
+  recipientId      String?
+  recipientType    String?   // all, class, parent, teacher, student
+  recipientClassId String?
+  title            String
+  message          String
+  type             String   // announcement, homework, attendance, complaint, qa, general
+  priority         String   @default("normal") // low, normal, high, urgent
+  isRead           Boolean  @default(false)
+  readAt           DateTime?
+  createdAt        DateTime @default(now())
+
+  // Relations
+  school           School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  sender           User      @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient        User?     @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientClass   Class?    @relation(fields: [recipientClassId], references: [id])
+
+  @@map("notifications")
+}
+
+model QAMessage {
+  id             String    @id @default(uuid())
+  parentId       String
+  classTeacherId String
+  studentId      String
+  message        String
+  reply          String?
+  status         String    @default("pending") // pending, replied, closed
+  priority       String    @default("normal") // low, normal, high, urgent
+  createdAt      DateTime  @default(now())
+  repliedAt      DateTime?
+  closedAt       DateTime?
+
+  // Relations
+  parent         User      @relation("QAMessageParent", fields: [parentId], references: [id], onDelete: Cascade)
+  classTeacher   User      @relation("QAMessageTeacher", fields: [classTeacherId], references: [id], onDelete: Cascade)
+  student        Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("qa_messages")
+}
+
+model Complaint {
+  id              String    @id @default(uuid())
+  studentId       String
+  complainantId   String
+  classTeacherId  String?
+  subject         String
+  description     String
+  category        String?   // academic, behavioral, disciplinary, other
+  status          String    @default("open") // open, in_progress, resolved, closed
+  priority        String    @default("normal") // low, normal, high, urgent
+  resolution      String?
+  resolvedBy       String?
+  createdAt       DateTime  @default(now())
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+
+  // Relations
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  complainant     User      @relation("ComplaintComplainant", fields: [complainantId], references: [id], onDelete: Cascade)
+  classTeacher     User?     @relation("ComplaintHandler", fields: [classTeacherId], references: [id])
+  resolver        User?     @relation("ComplaintResolver", fields: [resolvedBy], references: [id])
+
+  @@map("complaints")
+}
+
+model Grade {
+  id            String   @id @default(uuid())
+  studentId     String
+  subjectId     String
+  examType      String   // unit_test, mid_term, final, assignment
+  examName      String
+  marksObtained Decimal  @db.Decimal(5, 2)
+  totalMarks    Decimal  @db.Decimal(5, 2)
+  percentage    Decimal? @db.Decimal(5, 2)
+  grade         String?
+  examDate      DateTime @db.Date
+  teacherId     String
+  remarks       String?
+  academicYear  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject       Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher       User     @relation("GradeCreator", fields: [teacherId], references: [id])
+
+  @@map("grades")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}

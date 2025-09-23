@@ -1,0 +1,78 @@
+🏫 Flow with Web Portal + Self-Registration
+1. School Registration (Web Portal)
+
+School admin signs up on the portal.
+
+Creates school profile (name, address, logo, contact info).
+
+Gets unique school code/domain (e.g., myschool.yourapp.com).
+
+2. School Admin (after registration)
+
+Add classes + sections.
+
+Bulk upload students (CSV/Excel).
+
+Add teachers (emails/phone → teachers get login invite).
+
+Assign class teachers + subject teachers.
+
+3. Timetable Management
+
+School admin or class teacher designs timetable.
+
+System suggests auto-timetable (based on teacher free slots).
+
+Periods linked to subject teachers.
+
+4. Class Teacher
+
+Doesn’t “approve” (as you said), but acts as coordinator.
+
+Forwards parent queries to subject teacher or admin.
+
+Forwards homework/notifications from subject teacher to parents.
+
+Can also post homework, complaints, or notifications directly.
+
+Tracks student performance dashboards.
+
+5. Subject Teacher
+
+Linked to classes via timetable.
+
+Can post homework, complaints, announcements → automatically stored + sent to class teacher & parents.
+
+Update student marks & attendance for their subjects.
+
+6. Parents
+
+Register via invite / student code from school.
+
+View: timetable, homework, attendance, notifications, grades.
+
+Ask questions → routed to class teacher.
+
+Get school circulars, announcements.
+
+7. Dashboards
+
+Admin Dashboard → full school (classes, teachers, attendance stats).
+
+Class Teacher Dashboard → their class (attendance %, homework, issues).
+
+Parent Dashboard → per student progress (attendance, grades, homework completion).
+
+🔑 Key Changes From Your Update
+
+School can self-register on web → no manual onboarding.
+
+Class teacher is a coordinator → they don’t “approve,” just forward or communicate.
+
+Centralized process → every action (homework, complaint, Q&A) flows through class teacher → parents.
+
+Web + Mobile synergy →
+
+Web → used by admins & teachers.
+
+Mobile App → used by parents & teachers (quick updates, push notifications).
