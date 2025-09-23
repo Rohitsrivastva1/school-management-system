@@ -27,11 +27,12 @@ export const createTeacher = asyncHandler(async (req: Request, res: Response): P
   });
 
   if (existingUser) {
-    return res.status(409).json({
+    res.status(409).json({
       success: false,
       error: 'CONFLICT',
       message: 'User with this email already exists'
     });
+    return;
   }
 
   // Generate temporary password
@@ -331,11 +332,12 @@ export const updateUser = asyncHandler(async (req: Request, res: Response): Prom
   });
 
   if (!user) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'NOT_FOUND',
       message: 'User not found'
     });
+    return;
   }
 
   // Update user
@@ -378,11 +380,12 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response): Prom
   });
 
   if (!user) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'NOT_FOUND',
       message: 'User not found'
     });
+    return;
   }
 
   // Soft delete by setting isActive to false

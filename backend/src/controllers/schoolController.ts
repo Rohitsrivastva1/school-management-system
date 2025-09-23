@@ -31,11 +31,12 @@ export const getSchoolProfile = asyncHandler(async (req: Request, res: Response)
   });
 
   if (!school) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'NOT_FOUND',
       message: 'School not found'
     });
+    return;
   }
 
   res.json({

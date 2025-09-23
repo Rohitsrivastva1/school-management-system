@@ -18,11 +18,12 @@ export const createClass = asyncHandler(async (req: Request, res: Response): Pro
   });
 
   if (existingClass) {
-    return res.status(409).json({
+    res.status(409).json({
       success: false,
       error: 'CONFLICT',
       message: 'Class with this name and section already exists for this academic year'
     });
+    return;
   }
 
   // Verify class teacher exists and belongs to the same school
@@ -36,11 +37,12 @@ export const createClass = asyncHandler(async (req: Request, res: Response): Pro
     });
 
     if (!classTeacher) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'BAD_REQUEST',
         message: 'Invalid class teacher selected'
       });
+      return;
     }
   }
 
@@ -206,11 +208,12 @@ export const getClassDetails = asyncHandler(async (req: Request, res: Response):
   });
 
   if (!classDetails) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'NOT_FOUND',
       message: 'Class not found'
     });
+    return;
   }
 
   res.json({
@@ -264,11 +267,12 @@ export const updateClass = asyncHandler(async (req: Request, res: Response): Pro
   });
 
   if (!existingClass) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'NOT_FOUND',
       message: 'Class not found'
     });
+    return;
   }
 
   // Verify class teacher if provided
@@ -282,11 +286,12 @@ export const updateClass = asyncHandler(async (req: Request, res: Response): Pro
     });
 
     if (!classTeacher) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'BAD_REQUEST',
         message: 'Invalid class teacher selected'
       });
+      return;
     }
   }
 
@@ -337,20 +342,22 @@ export const deleteClass = asyncHandler(async (req: Request, res: Response): Pro
   });
 
   if (!existingClass) {
-    return res.status(404).json({
+    res.status(404).json({
       success: false,
       error: 'NOT_FOUND',
       message: 'Class not found'
     });
+    return;
   }
 
   // Check if class has students
   if (existingClass._count.students > 0) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: 'BAD_REQUEST',
       message: 'Cannot delete class with existing students. Please transfer students first.'
     });
+    return;
   }
 
   // Soft delete by setting isActive to false

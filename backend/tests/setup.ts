@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 // Test database configuration
-const testDatabaseUrl = process.env.TEST_DATABASE_URL || 'postgresql://test_user:test_password@localhost:5432/school_management_test';
+const testDatabaseUrl = process.env.DATABASE_URL || 'postgresql://postgres:9695@localhost:5432/school_management_test';
 
 // Create a separate Prisma client for testing
 export const testPrisma = new PrismaClient({

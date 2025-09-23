@@ -11,6 +11,7 @@ import authRoutes from './routes/auth';
 import schoolRoutes from './routes/school';
 import userRoutes from './routes/users';
 import classRoutes from './routes/classes';
+import teacherRoutes from './routes/teachers';
 
 // Load environment variables
 dotenv.config();
@@ -70,6 +71,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/schools', schoolRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/classes', classRoutes);
+app.use('/api/v1/teachers', teacherRoutes);
 
 // 404 handler
 app.use(notFoundHandler);

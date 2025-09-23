@@ -1,0 +1,46 @@
+{
+  "name": "schoolmanagement",
+  "version": "1.0.0",
+  "description": "A comprehensive, multi-tenant school management system built with modern web technologies. This system supports multiple schools with role-based access control for administrators, teachers, parents, and students.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "e2e": "node tests/e2e/run-tests.js",
+    "e2e:smoke": "node tests/e2e/run-tests.js smoke",
+    "e2e:regression": "node tests/e2e/run-tests.js regression",
+    "e2e:homepage": "node tests/e2e/run-tests.js homepage",
+    "e2e:login": "node tests/e2e/run-tests.js login",
+    "e2e:registration": "node tests/e2e/run-tests.js registration",
+    "e2e:user-journey": "node tests/e2e/run-tests.js user-journey",
+    "e2e:accessibility": "node tests/e2e/run-tests.js accessibility",
+    "e2e:performance": "node tests/e2e/run-tests.js performance",
+    "e2e:security": "node tests/e2e/run-tests.js security",
+    "e2e:mobile": "node tests/e2e/run-tests.js mobile",
+    "e2e:all": "node tests/e2e/run-tests.js all",
+    "e2e:report": "node tests/e2e/run-tests.js report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rohitsrivastva1/school-management-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Rohitsrivastva1/school-management-system/issues"
+  },
+  "homepage": "https://github.com/Rohitsrivastva1/school-management-system#readme",
+  "devDependencies": {
+    "@cucumber/cucumber": "^12.2.0",
+    "@cucumber/pretty-formatter": "^2.3.0",
+    "@types/chai": "^5.2.2",
+    "@types/chai-as-promised": "^8.0.2",
+    "@types/selenium-webdriver": "^4.1.28",
+    "chai": "^6.0.1",
+    "chai-as-promised": "^8.0.2",
+    "chromedriver": "^140.0.3",
+    "cucumber-html-reporter": "^7.2.0",
+    "geckodriver": "^6.0.1",
+    "selenium-webdriver": "^4.35.0"
+  }
+}

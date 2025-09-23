@@ -125,12 +125,13 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
   }
 
   // Check if school is active
-  if (!user.school.isActive) {
+  if (!user?.school?.isActive) {
     res.status(403).json({
       success: false,
       error: 'FORBIDDEN',
       message: 'School account is deactivated'
     });
+    return;
   }
 
   // Verify password
@@ -141,33 +142,34 @@ export const login = asyncHandler(async (req: Request, res: Response): Promise<v
       error: 'UNAUTHORIZED',
       message: 'Invalid email or password'
     });
+    return;
   }
 
   // Update last login
   await prisma.user.update({
-    where: { id: user.id },
+    where: { id: user!.id },
     data: { lastLogin: new Date() }
   });
 
   // Generate tokens
   const tokens = generateTokens({
-    userId: user.id,
-    schoolId: user.schoolId,
-    role: user.role as UserRole,
-    email: user.email
+    userId: user!.id,
+    schoolId: user!.schoolId,
+    role: user!.role as UserRole,
+    email: user!.email
   });
 
   res.json({
     success: true,
     data: {
       user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        schoolId: user.schoolId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        profileImageUrl: user.profileImageUrl
+        id: user!.id,
+        email: user!.email,
+        role: user!.role,
+        schoolId: user!.schoolId,
+        firstName: user!.firstName,
+        lastName: user!.lastName,
+        profileImageUrl: user!.profileImageUrl
       },
       tokens
     },
@@ -204,6 +206,7 @@ export const refreshToken = asyncHandler(async (req: Request, res: Response): Pr
         error: 'UNAUTHORIZED',
         message: 'Invalid refresh token'
       });
+      return;
     }
 
     // Generate new access token
@@ -285,6 +288,7 @@ export const getProfile = asyncHandler(async (req: Request, res: Response): Prom
       error: 'NOT_FOUND',
       message: 'User not found'
     });
+    return;
   }
 
   res.json({
@@ -350,6 +354,7 @@ export const changePassword = asyncHandler(async (req: Request, res: Response): 
       error: 'NOT_FOUND',
       message: 'User not found'
     });
+    return;
   }
 
   // Verify current password
