@@ -140,15 +140,15 @@ export const validateAttendanceMarking = [
     .isISO8601()
     .withMessage('Please provide a valid date'),
   
-  body('attendance')
+  body('attendanceData')
     .isArray({ min: 1 })
     .withMessage('At least one attendance record is required'),
   
-  body('attendance.*.studentId')
+  body('attendanceData.*.studentId')
     .isUUID()
     .withMessage('Please provide a valid student ID'),
   
-  body('attendance.*.status')
+  body('attendanceData.*.status')
     .isIn(Object.values(AttendanceStatus))
     .withMessage('Please provide a valid attendance status'),
   
@@ -288,6 +288,101 @@ export const validateUserUpdate = [
     .optional()
     .isBoolean()
     .withMessage('isActive must be a boolean value'),
+  
+  handleValidationErrors
+];
+
+// Q&A creation validation
+export const validateQACreation = [
+  body('studentId')
+    .isUUID()
+    .withMessage('Please provide a valid student ID'),
+  
+  body('message')
+    .trim()
+    .isLength({ min: 1, max: 1000 })
+    .withMessage('Message must be between 1 and 1000 characters'),
+  
+  body('priority')
+    .optional()
+    .isIn(Object.values(Priority))
+    .withMessage('Please provide a valid priority level'),
+  
+  handleValidationErrors
+];
+
+// Q&A reply validation
+export const validateQAReply = [
+  body('reply')
+    .trim()
+    .isLength({ min: 1, max: 1000 })
+    .withMessage('Reply must be between 1 and 1000 characters'),
+  
+  body('status')
+    .optional()
+    .isIn(['pending', 'replied', 'closed'])
+    .withMessage('Please provide a valid status'),
+  
+  handleValidationErrors
+];
+
+// Complaint creation validation
+export const validateComplaintCreation = [
+  body('studentId')
+    .isUUID()
+    .withMessage('Please provide a valid student ID'),
+  
+  body('subject')
+    .trim()
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Subject must be between 1 and 255 characters'),
+  
+  body('description')
+    .trim()
+    .isLength({ min: 1, max: 2000 })
+    .withMessage('Description must be between 1 and 2000 characters'),
+  
+  body('category')
+    .optional()
+    .isIn(['academic', 'behavioral', 'disciplinary', 'other'])
+    .withMessage('Please provide a valid category'),
+  
+  body('priority')
+    .optional()
+    .isIn(Object.values(Priority))
+    .withMessage('Please provide a valid priority level'),
+  
+  handleValidationErrors
+];
+
+// Complaint update validation
+export const validateComplaintUpdate = [
+  body('subject')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 255 })
+    .withMessage('Subject must be between 1 and 255 characters'),
+  
+  body('description')
+    .optional()
+    .trim()
+    .isLength({ min: 1, max: 2000 })
+    .withMessage('Description must be between 1 and 2000 characters'),
+  
+  body('category')
+    .optional()
+    .isIn(['academic', 'behavioral', 'disciplinary', 'other'])
+    .withMessage('Please provide a valid category'),
+  
+  body('priority')
+    .optional()
+    .isIn(Object.values(Priority))
+    .withMessage('Please provide a valid priority level'),
+  
+  body('status')
+    .optional()
+    .isIn(['open', 'in_progress', 'resolved', 'closed'])
+    .withMessage('Please provide a valid status'),
   
   handleValidationErrors
 ];

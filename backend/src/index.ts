@@ -12,6 +12,14 @@ import schoolRoutes from './routes/school';
 import userRoutes from './routes/users';
 import classRoutes from './routes/classes';
 import teacherRoutes from './routes/teachers';
+import attendanceRoutes from './routes/attendance';
+import homeworkRoutes from './routes/homework';
+import qaRoutes from './routes/qa';
+import complaintRoutes from './routes/complaints';
+import notificationRoutes from './routes/notifications';
+import fileRoutes from './routes/files';
+import dashboardRoutes from './routes/dashboard';
+import analyticsRoutes from './routes/analytics';
 
 // Load environment variables
 dotenv.config();
@@ -72,6 +80,14 @@ app.use('/api/v1/schools', schoolRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/classes', classRoutes);
 app.use('/api/v1/teachers', teacherRoutes);
+app.use('/api/v1/attendance', attendanceRoutes);
+app.use('/api/v1/homework', homeworkRoutes);
+app.use('/api/v1/qa', qaRoutes);
+app.use('/api/v1/complaints', complaintRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/files', fileRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
