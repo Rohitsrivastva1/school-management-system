@@ -5,7 +5,8 @@ import {
   getTeacherById, 
   updateTeacher, 
   deleteTeacher,
-  getTeacherStats 
+  getTeacherStats,
+  getTeacherSubjects
 } from '../controllers/teacherController';
 import { authenticate, authorize } from '../middleware/auth';
 import { UserRole } from '../types';
@@ -22,6 +23,9 @@ router.use(authenticate);
 
 // Teacher statistics
 router.get('/stats', authorize(UserRole.ADMIN), getTeacherStats);
+
+// Get teacher's subjects (teachers only)
+router.get('/subjects', authorize(UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER), getTeacherSubjects);
 
 // Create teacher (admin only)
 router.post('/', authorize(UserRole.ADMIN), validateUserCreation, createTeacher);

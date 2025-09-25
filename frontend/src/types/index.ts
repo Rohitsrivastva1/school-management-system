@@ -136,6 +136,7 @@ export interface UpdateTeacherPayload {
   employeeId?: string;
   isClassTeacher?: boolean;
   isActive?: boolean;
+  subjects?: string[];
 }
 
 // Subject Types

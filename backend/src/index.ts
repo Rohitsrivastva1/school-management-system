@@ -12,8 +12,10 @@ import schoolRoutes from './routes/school';
 import userRoutes from './routes/users';
 import classRoutes from './routes/classes';
 import teacherRoutes from './routes/teachers';
+import subjectRoutes from './routes/subjects';
 import attendanceRoutes from './routes/attendance';
 import homeworkRoutes from './routes/homework';
+import timetableRoutes from './routes/timetable';
 import qaRoutes from './routes/qa';
 import complaintRoutes from './routes/complaints';
 import notificationRoutes from './routes/notifications';
@@ -38,7 +40,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
+// Rate limiting (enabled in production by default)
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // limit each IP to 100 requests per windowMs
@@ -51,7 +53,15 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use('/api/', limiter);
+// Only enable the limiter when explicitly enabled
+const isRateLimitEnabled = (
+  (process.env.NODE_ENV === 'production') &&
+  ((process.env.RATE_LIMIT_ENABLED ?? 'true') === 'true')
+);
+
+if (isRateLimitEnabled) {
+  app.use('/api/', limiter);
+}
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -80,8 +90,10 @@ app.use('/api/v1/schools', schoolRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/classes', classRoutes);
 app.use('/api/v1/teachers', teacherRoutes);
+app.use('/api/v1/subjects', subjectRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
 app.use('/api/v1/homework', homeworkRoutes);
+app.use('/api/v1/timetable', timetableRoutes);
 app.use('/api/v1/qa', qaRoutes);
 app.use('/api/v1/complaints', complaintRoutes);
 app.use('/api/v1/notifications', notificationRoutes);

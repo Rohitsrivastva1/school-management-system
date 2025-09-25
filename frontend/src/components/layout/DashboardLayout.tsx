@@ -20,26 +20,30 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block`}>
+    <div className="min-h-screen" style={{backgroundColor: 'var(--background-light)'}}>
+      {/* Fixed Sidebar */}
+      <div className={`fixed-sidebar ${
+        sidebarOpen ? 'open' : ''
+      } lg:translate-x-0`}>
         <Sidebar 
           schoolName={schoolName}
           userRole={userRole}
         />
       </div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <Header 
-          title={title}
-          showSidebarToggle={true}
-          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
-        />
+      {/* Main content area */}
+      <div className="content-with-sidebar min-h-screen flex flex-col">
+        {/* Fixed Header */}
+        <div className="fixed-header">
+          <Header 
+            title={title}
+            showSidebarToggle={true}
+            onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+          />
+        </div>
 
-        {/* Page content */}
-        <main className="flex-1 p-6">
+        {/* Scrollable Page content */}
+        <main className="scrollable-content p-6">
           {children}
         </main>
       </div>
@@ -47,7 +51,7 @@ export default function DashboardLayout({
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

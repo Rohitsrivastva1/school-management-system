@@ -1,32 +1,100 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuthStore } from '@/stores/authStore';
+import { schoolAPI } from '@/lib/api';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const [schoolData, setSchoolData] = useState({
-    name: 'GPS School',
-    email: 'admin@gmail.com',
-    phone: '6394322640',
-    address: 'school@gmail.com, jhansi',
-    city: 'Jhansi',
-    state: 'Uttar Pradesh',
-    pincode: '284001',
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
     website: ''
   });
-
+  const [originalData, setOriginalData] = useState({});
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
-    // TODO: Implement school profile update API call
-    console.log('Updating school profile:', schoolData);
-    setIsEditing(false);
+  useEffect(() => {
+    fetchSchoolProfile();
+  }, []);
+
+  const fetchSchoolProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await schoolAPI.getProfile();
+      if (response.data.success) {
+        const profile = response.data.data;
+        setSchoolData({
+          name: profile.name || '',
+          email: profile.email || '',
+          phone: profile.phone || '',
+          address: profile.address || '',
+          city: profile.city || '',
+          state: profile.state || '',
+          pincode: profile.pincode || '',
+          website: profile.website || ''
+        });
+        setOriginalData(profile);
+      }
+    } catch (err) {
+      setError('Failed to fetch school profile');
+      console.error('Error fetching school profile:', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const response = await schoolAPI.updateProfile(schoolData);
+      if (response.data.success) {
+        setOriginalData(schoolData);
+        setIsEditing(false);
+        setError('');
+      }
+    } catch (err) {
+      setError('Failed to update school profile');
+      console.error('Error updating school profile:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setSchoolData(originalData);
+    setIsEditing(false);
+    setError('');
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout 
+        title="School Settings" 
+        schoolName="Loading..."
+        userRole={user?.role}
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading school profile...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout 
@@ -35,6 +103,12 @@ export default function SettingsPage() {
       userRole={user?.role}
     >
       <div className="max-w-4xl mx-auto space-y-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+        
         {/* School Profile */}
         <Card>
           <CardHeader>
@@ -48,6 +122,7 @@ export default function SettingsPage() {
               <Button 
                 variant={isEditing ? "outline" : "default"}
                 onClick={() => setIsEditing(!isEditing)}
+                disabled={saving}
               >
                 {isEditing ? 'Cancel' : 'Edit Profile'}
               </Button>
@@ -141,12 +216,13 @@ export default function SettingsPage() {
             
             {isEditing && (
               <div className="flex space-x-4 pt-4">
-                <Button onClick={handleSave}>
-                  Save Changes
+                <Button onClick={handleSave} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => setIsEditing(false)}
+                  onClick={handleCancel}
+                  disabled={saving}
                 >
                   Cancel
                 </Button>

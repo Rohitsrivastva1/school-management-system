@@ -6,7 +6,11 @@ import { asyncHandler } from '../middleware/errorHandler';
 export const createHomework = asyncHandler(async (req: Request, res: Response): Promise<void> => {
   const schoolId = req.user!.schoolId;
   const teacherId = req.user!.userId;
-  const { classId, subjectId, title, description, dueDate, attachments } = req.body;
+  const { classId, subjectId, title, description, dueDate, attachments, isPublished } = req.body;
+
+  console.log('Homework creation request body:', req.body);
+  console.log('classId:', classId, 'type:', typeof classId);
+  console.log('subjectId:', subjectId, 'type:', typeof subjectId);
 
   // Verify class exists and belongs to the same school
   const classExists = await prisma.class.findFirst({
@@ -44,7 +48,8 @@ export const createHomework = asyncHandler(async (req: Request, res: Response): 
       title,
       description,
       dueDate: new Date(dueDate),
-      attachments: attachments || null
+      attachments: attachments || null,
+      isPublished: isPublished || false
     },
     include: {
       class: {

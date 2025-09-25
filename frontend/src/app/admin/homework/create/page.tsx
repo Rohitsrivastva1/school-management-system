@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuthStore } from '@/stores/authStore';
-import { classesAPI, homeworkAPI, subjectsAPI, teachersAPI, schoolAPI } from '@/lib/api';
+import { classesAPI, homeworkAPI, schoolAPI, subjectsAPI } from '@/lib/api';
 
 interface Class {
   id: string;
@@ -30,6 +30,7 @@ const homeworkSchema = z.object({
   subjectId: z.string().min(1, 'Subject is required'),
   dueDate: z.string().min(1, 'Due date is required'),
   maxMarks: z.string().optional(),
+  isPublished: z.boolean().optional(),
 });
 
 type HomeworkForm = z.infer<typeof homeworkSchema>;
@@ -39,7 +40,6 @@ export default function CreateHomeworkPage() {
   const { user } = useAuthStore();
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [teacherSubjects, setTeacherSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>('');
@@ -49,41 +49,30 @@ export default function CreateHomeworkPage() {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
-    setValue,
   } = useForm<HomeworkForm>({
     resolver: zodResolver(homeworkSchema),
   });
 
-  const selectedClassId = watch('classId');
-
   useEffect(() => {
-    if (!user || (user.role !== 'class_teacher' && user.role !== 'subject_teacher')) {
-      router.push('/login');
-      return;
-    }
     fetchData();
-  }, [user, router]);
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      setError('');
       
-      // Fetch classes, all subjects, teacher's specific subjects, and school info
-      const [classesResponse, subjectsResponse, teacherSubjectsResponse, schoolResponse] = await Promise.all([
+      const [schoolRes, classesRes, subjectsRes] = await Promise.all([
+        schoolAPI.getProfile(),
         classesAPI.getClasses({ page: 1, limit: 100 }),
-        subjectsAPI.getSubjects({ page: 1, limit: 100 }),
-        teachersAPI.getTeacherSubjects(),
-        schoolAPI.getProfile()
+        subjectsAPI.getSubjects({ page: 1, limit: 100 })
       ]);
 
-      if (schoolResponse.data?.success) {
-        setSchoolName(schoolResponse.data.data?.name || 'GPS School');
+      if (schoolRes.data?.success) {
+        setSchoolName(schoolRes.data.data?.name || 'GPS School');
       }
 
-      if (classesResponse.data.success) {
-        const transformedClasses = classesResponse.data.data.map((classItem: any) => ({
+      if (classesRes.data.success) {
+        const transformedClasses = classesRes.data.data.map((classItem: any) => ({
           id: classItem.id,
           name: classItem.name,
           section: classItem.section
@@ -91,30 +80,18 @@ export default function CreateHomeworkPage() {
         setClasses(transformedClasses);
       }
 
-      if (subjectsResponse.data.success) {
-        const transformedSubjects = subjectsResponse.data.data.map((subject: any) => ({
+      if (subjectsRes.data.success) {
+        const transformedSubjects = subjectsRes.data.data.map((subject: any) => ({
           id: subject.id,
           name: subject.name
         }));
+        console.log('Loaded subjects:', transformedSubjects);
         setSubjects(transformedSubjects);
-      }
-
-      if (teacherSubjectsResponse.data.success) {
-        const transformedTeacherSubjects = teacherSubjectsResponse.data.data.map((subject: any) => ({
-          id: subject.id,
-          name: subject.name
-        }));
-        setTeacherSubjects(transformedTeacherSubjects);
-        
-        // If teacher has only one subject, pre-select it
-        if (transformedTeacherSubjects.length === 1) {
-          setValue('subjectId', transformedTeacherSubjects[0].id);
-        }
+      } else {
+        console.error('Failed to load subjects:', subjectsRes.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
-      setError('Failed to load data. Please try again.');
-      
       // Fallback to mock data
       setClasses([
         { id: '1', name: 'Class 10', section: 'A' },
@@ -138,20 +115,29 @@ export default function CreateHomeworkPage() {
       setIsSubmitting(true);
       setError('');
 
+      console.log('Form data:', data);
+      console.log('Selected classId:', data.classId);
+      console.log('Selected subjectId:', data.subjectId);
+      console.log('Available subjects:', subjects);
+
       const payload = {
         classId: data.classId,
         subjectId: data.subjectId,
         title: data.title,
         description: data.description,
-        dueDate: data.dueDate,
+        dueDate: new Date(data.dueDate).toISOString(),
+        maxMarks: data.maxMarks ? parseInt(data.maxMarks) : undefined,
+        isPublished: data.isPublished || false,
         attachments: null // TODO: Handle file uploads
       };
+
+      console.log('Creating homework with payload:', payload);
 
       const response = await homeworkAPI.createHomework(payload);
       
       if (response.data.success) {
         alert('Homework created successfully!');
-        router.push('/teacher/dashboard');
+        router.push('/admin/homework');
       } else {
         throw new Error(response.data.message || 'Failed to create homework');
       }
@@ -193,7 +179,7 @@ export default function CreateHomeworkPage() {
           <CardHeader>
             <CardTitle>Create New Homework</CardTitle>
             <CardDescription>
-              Assign homework to your students
+              Assign homework to students
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -251,34 +237,19 @@ export default function CreateHomeworkPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Subject *
                   </label>
-                  {teacherSubjects.length === 0 ? (
-                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">
-                      No subjects assigned to you
-                    </div>
-                  ) : teacherSubjects.length === 1 ? (
-                    <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-green-50 text-green-700 font-medium">
-                      {teacherSubjects[0].name} (Pre-selected)
-                    </div>
-                  ) : (
-                    <select
-                      {...register('subjectId')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select Subject</option>
-                      {teacherSubjects.map((subject) => (
-                        <option key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  <select
+                    {...register('subjectId')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Subject</option>
+                    {subjects.map((subject) => (
+                      <option key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </select>
                   {errors.subjectId && (
                     <p className="text-sm text-red-600 mt-1">{errors.subjectId.message}</p>
-                  )}
-                  {teacherSubjects.length > 1 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Showing only subjects assigned to you
-                    </p>
                   )}
                 </div>
               </div>
@@ -324,6 +295,19 @@ export default function CreateHomeworkPage() {
                 </div>
               </div>
 
+              <div className="flex items-center space-x-4 pt-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isPublished"
+                    {...register('isPublished')}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="isPublished" className="text-sm font-medium text-gray-700">
+                    Publish immediately
+                  </label>
+                </div>
+              </div>
 
               <div className="flex space-x-4 pt-4">
                 <Button type="submit" className="flex-1" disabled={isSubmitting}>
@@ -332,7 +316,7 @@ export default function CreateHomeworkPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push('/teacher/dashboard')}
+                  onClick={() => router.push('/admin/homework')}
                   className="flex-1"
                 >
                   Cancel

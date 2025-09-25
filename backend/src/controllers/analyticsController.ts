@@ -992,10 +992,10 @@ export const getSchoolAnalytics = asyncHandler(async (req: Request, res: Respons
     // Overview statistics
     prisma.$queryRaw`
       SELECT 
-        (SELECT COUNT(*) FROM students s JOIN classes c ON s.class_id = c.id WHERE c.school_id = ${schoolId} AND s.is_active = true) as total_students,
-        (SELECT COUNT(*) FROM teachers t JOIN users u ON t.user_id = u.id WHERE u.school_id = ${schoolId} AND t.is_active = true) as total_teachers,
-        (SELECT COUNT(*) FROM classes WHERE school_id = ${schoolId} AND is_active = true) as total_classes,
-        (SELECT COUNT(*) FROM users WHERE school_id = ${schoolId} AND role = 'parent' AND is_active = true) as total_parents
+        (SELECT COUNT(*) FROM students s JOIN classes c ON s."classId" = c.id WHERE c."schoolId" = ${schoolId} AND s."isActive" = true) as total_students,
+        (SELECT COUNT(*) FROM teachers t JOIN users u ON t."userId" = u.id WHERE u."schoolId" = ${schoolId} AND t."isActive" = true) as total_teachers,
+        (SELECT COUNT(*) FROM classes WHERE "schoolId" = ${schoolId} AND "isActive" = true) as total_classes,
+        (SELECT COUNT(*) FROM users WHERE "schoolId" = ${schoolId} AND role = 'parent' AND "isActive" = true) as total_parents
     `,
     
     // Attendance overview
@@ -1009,9 +1009,9 @@ export const getSchoolAnalytics = asyncHandler(async (req: Request, res: Respons
           NULLIF(COUNT(a.id), 0), 2
         ) as overall_attendance_percentage
       FROM attendance a
-      JOIN students s ON a.student_id = s.id
-      JOIN classes c ON s.class_id = c.id
-      WHERE c.school_id = ${schoolId}
+      JOIN students s ON a."studentId" = s.id
+      JOIN classes c ON s."classId" = c.id
+      WHERE c."schoolId" = ${schoolId}
         AND a.date >= ${dateStart}
         AND a.date <= ${dateEnd}
     `,
@@ -1024,11 +1024,11 @@ export const getSchoolAnalytics = asyncHandler(async (req: Request, res: Respons
         MIN(g.percentage) as min_percentage,
         MAX(g.percentage) as max_percentage
       FROM grades g
-      JOIN students s ON g.student_id = s.id
-      JOIN classes c ON s.class_id = c.id
-      WHERE c.school_id = ${schoolId}
-        AND g.exam_date >= ${dateStart}
-        AND g.exam_date <= ${dateEnd}
+      JOIN students s ON g."studentId" = s.id
+      JOIN classes c ON s."classId" = c.id
+      WHERE c."schoolId" = ${schoolId}
+        AND g."examDate" >= ${dateStart}
+        AND g."examDate" <= ${dateEnd}
     `.catch(() => ({
       total_exams: 0,
       average_percentage: 0,
@@ -1041,25 +1041,25 @@ export const getSchoolAnalytics = asyncHandler(async (req: Request, res: Respons
       SELECT 
         'student_admission' as activity_type,
         s.id as record_id,
-        u.first_name,
-        u.last_name,
-        s.created_at as activity_date
+        u."firstName" as first_name,
+        u."lastName" as last_name,
+        s."createdAt" as activity_date
       FROM students s
-      JOIN users u ON s.user_id = u.id
-      JOIN classes c ON s.class_id = c.id
-      WHERE c.school_id = ${schoolId}
-        AND s.created_at >= ${dateStart}
+      JOIN users u ON s."userId" = u.id
+      JOIN classes c ON s."classId" = c.id
+      WHERE c."schoolId" = ${schoolId}
+        AND s."createdAt" >= ${dateStart}
       UNION ALL
       SELECT 
         'teacher_joining' as activity_type,
         t.id as record_id,
-        u.first_name,
-        u.last_name,
-        t.created_at as activity_date
+        u."firstName" as first_name,
+        u."lastName" as last_name,
+        t."createdAt" as activity_date
       FROM teachers t
-      JOIN users u ON t.user_id = u.id
-      WHERE u.school_id = ${schoolId}
-        AND t.created_at >= ${dateStart}
+      JOIN users u ON t."userId" = u.id
+      WHERE u."schoolId" = ${schoolId}
+        AND t."createdAt" >= ${dateStart}
       ORDER BY activity_date DESC
       LIMIT 20
     `,
@@ -1070,42 +1070,84 @@ export const getSchoolAnalytics = asyncHandler(async (req: Request, res: Respons
         'students' as table_name,
         COUNT(*) as record_count
       FROM students s
-      JOIN classes c ON s.class_id = c.id
-      WHERE c.school_id = ${schoolId}
+      JOIN classes c ON s."classId" = c.id
+      WHERE c."schoolId" = ${schoolId}
       UNION ALL
       SELECT 
         'teachers' as table_name,
         COUNT(*) as record_count
       FROM teachers t
-      JOIN users u ON t.user_id = u.id
-      WHERE u.school_id = ${schoolId}
+      JOIN users u ON t."userId" = u.id
+      WHERE u."schoolId" = ${schoolId}
       UNION ALL
       SELECT 
         'classes' as table_name,
         COUNT(*) as record_count
       FROM classes
-      WHERE school_id = ${schoolId}
+      WHERE "schoolId" = ${schoolId}
       UNION ALL
       SELECT 
         'attendance' as table_name,
         COUNT(*) as record_count
       FROM attendance a
-      JOIN students s ON a.student_id = s.id
-      JOIN classes c ON s.class_id = c.id
-      WHERE c.school_id = ${schoolId}
+      JOIN students s ON a."studentId" = s.id
+      JOIN classes c ON s."classId" = c.id
+      WHERE c."schoolId" = ${schoolId}
         AND a.date >= ${dateStart}
     `
   ]);
+
+  // Helper function to convert BigInt to number
+  const convertBigInt = (value: any): number => {
+    if (typeof value === 'bigint') {
+      return Number(value);
+    }
+    return value || 0;
+  };
+
+  // Helper function to safely process array data
+  const processArrayData = (data: any, processor: (item: any) => any) => {
+    if (Array.isArray(data)) {
+      return data.map(processor);
+    }
+    return [];
+  };
 
   res.json({
     success: true,
     data: {
       school: schoolInfo,
+      overviewStats: processArrayData(overviewStats, (stat: any) => ({
+        total_students: convertBigInt(stat.total_students),
+        total_teachers: convertBigInt(stat.total_teachers),
+        total_classes: convertBigInt(stat.total_classes),
+        total_parents: convertBigInt(stat.total_parents)
+      })),
+      attendanceOverview: processArrayData(attendanceOverview, (stat: any) => ({
+        total_records: convertBigInt(stat.total_records),
+        present_count: convertBigInt(stat.present_count),
+        absent_count: convertBigInt(stat.absent_count),
+        overall_attendance_percentage: convertBigInt(stat.overall_attendance_percentage)
+      })),
+      performanceOverview: processArrayData(performanceOverview, (stat: any) => ({
+        total_exams: convertBigInt(stat.total_exams),
+        average_percentage: convertBigInt(stat.average_percentage),
+        min_percentage: convertBigInt(stat.min_percentage),
+        max_percentage: convertBigInt(stat.max_percentage)
+      })),
+      recentActivities: processArrayData(recentActivities, (activity: any) => ({
+        ...activity,
+        record_id: convertBigInt(activity.record_id)
+      })),
+      systemHealth: processArrayData(systemHealth, (health: any) => ({
+        ...health,
+        record_count: convertBigInt(health.record_count)
+      })),
       overview: {
-        totalStudents: (overviewStats as any)[0]?.total_students || 0,
-        totalTeachers: (overviewStats as any)[0]?.total_teachers || 0,
-        totalClasses: (overviewStats as any)[0]?.total_classes || 0,
-        totalParents: (overviewStats as any)[0]?.total_parents || 0,
+        totalStudents: convertBigInt((overviewStats as any)[0]?.total_students),
+        totalTeachers: convertBigInt((overviewStats as any)[0]?.total_teachers),
+        totalClasses: convertBigInt((overviewStats as any)[0]?.total_classes),
+        totalParents: convertBigInt((overviewStats as any)[0]?.total_parents),
         period: Number(period),
         dateRange: {
           start: dateStart,
@@ -1113,19 +1155,17 @@ export const getSchoolAnalytics = asyncHandler(async (req: Request, res: Respons
         }
       },
       attendance: {
-        totalRecords: (attendanceOverview as any)[0]?.total_records || 0,
-        presentCount: (attendanceOverview as any)[0]?.present_count || 0,
-        absentCount: (attendanceOverview as any)[0]?.absent_count || 0,
-        overallPercentage: (attendanceOverview as any)[0]?.overall_attendance_percentage || 0
+        totalRecords: convertBigInt((attendanceOverview as any)[0]?.total_records),
+        presentCount: convertBigInt((attendanceOverview as any)[0]?.present_count),
+        absentCount: convertBigInt((attendanceOverview as any)[0]?.absent_count),
+        overallPercentage: convertBigInt((attendanceOverview as any)[0]?.overall_attendance_percentage)
       },
       performance: {
-        totalExams: (performanceOverview as any)[0]?.total_exams || 0,
-        averagePercentage: Math.round((performanceOverview as any)[0]?.average_percentage || 0),
-        minPercentage: (performanceOverview as any)[0]?.min_percentage || 0,
-        maxPercentage: (performanceOverview as any)[0]?.max_percentage || 0
-      },
-      recentActivities: recentActivities,
-      systemHealth: systemHealth
+        totalExams: convertBigInt((performanceOverview as any)[0]?.total_exams),
+        averagePercentage: Math.round(convertBigInt((performanceOverview as any)[0]?.average_percentage)),
+        minPercentage: convertBigInt((performanceOverview as any)[0]?.min_percentage),
+        maxPercentage: convertBigInt((performanceOverview as any)[0]?.max_percentage)
+      }
     }
   });
 });

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuthStore } from '@/stores/authStore';
 import { useRouter } from 'next/navigation';
+import { schoolAPI, dashboardAPI, teachersAPI, classesAPI, usersAPI } from '@/lib/api';
 
 interface DashboardStats {
   totalStudents: number;
@@ -46,23 +47,48 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       
-      // Mock data for now - replace with actual API calls when endpoints are ready
+      // Fetch school profile
+      const schoolResponse = await schoolAPI.getProfile();
+      if (schoolResponse.data.success) {
+        setSchoolProfile(schoolResponse.data.data);
+      }
+
+      // Fetch dashboard stats
+      try {
+        const dashboardResponse = await dashboardAPI.getAdminDashboard();
+        if (dashboardResponse.data.success) {
+          const overview = dashboardResponse.data.data.overview;
+          setStats({
+            totalStudents: overview.totalStudents || 0,
+            totalTeachers: overview.totalTeachers || 0,
+            totalClasses: overview.totalClasses || 0,
+            recentAdmissions: overview.recentAdmissions || 0
+          });
+        }
+      } catch (dashboardError) {
+        // Fallback: fetch individual stats
+        const [teachersResponse, classesResponse, studentsResponse] = await Promise.all([
+          teachersAPI.getTeachers({ page: 1, limit: 1 }),
+          classesAPI.getClasses({ page: 1, limit: 1 }),
+          usersAPI.getStudents({ page: 1, limit: 1 })
+        ]);
+
+        setStats({
+          totalStudents: studentsResponse.data.pagination?.total || 0,
+          totalTeachers: teachersResponse.data.pagination?.total || 0,
+          totalClasses: classesResponse.data.pagination?.total || 0,
+          recentAdmissions: 0 // This would need a specific endpoint
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Set fallback data
       setStats({
         totalStudents: 0,
         totalTeachers: 0,
         totalClasses: 0,
         recentAdmissions: 0
       });
-
-      setSchoolProfile({
-        id: user?.schoolId || '',
-        name: 'GPS School',
-        email: user?.email || 'admin@school.com',
-        phone: '6394322640',
-        address: 'school@gmail.com, jhansi'
-      });
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }

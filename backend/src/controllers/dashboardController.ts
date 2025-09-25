@@ -39,7 +39,10 @@ export const getAdminDashboard = asyncHandler(async (req: Request, res: Response
     prisma.student.count({
       where: { 
         class: { schoolId },
-        isActive: true 
+        isActive: true,
+        user: {
+          role: 'student'
+        }
       }
     }),
     prisma.teacher.count({
@@ -235,15 +238,15 @@ export const getAdminDashboard = asyncHandler(async (req: Request, res: Response
         COUNT(*) as total_records,
         'students' as table_name
       FROM students s
-      JOIN classes c ON s.class_id = c.id
-      WHERE c.school_id = ${schoolId}
+      JOIN classes c ON s."classId" = c.id
+      WHERE c."schoolId" = ${schoolId}
       UNION ALL
       SELECT 
         COUNT(*) as total_records,
         'teachers' as table_name
       FROM teachers t
-      JOIN users u ON t.user_id = u.id
-      WHERE u.school_id = ${schoolId}
+      JOIN users u ON t."userId" = u.id
+      WHERE u."schoolId" = ${schoolId}
     `
   ]);
 

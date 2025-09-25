@@ -15,12 +15,15 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
+    console.log('API Request - Token:', token ? 'Present' : 'Missing');
+    console.log('API Request - URL:', config.url);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => {
+    console.error('API Request Error:', error);
     return Promise.reject(error);
   }
 );
@@ -28,6 +31,7 @@ api.interceptors.request.use(
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response: AxiosResponse) => {
+    console.log('API Response - Status:', response.status, 'URL:', response.config.url);
     return response;
   },
   async (error) => {
@@ -107,11 +111,16 @@ export const teachersAPI = {
   updateTeacher: (id: string, data: any) => api.put<ApiResponse<any>>(`/teachers/${id}`, data),
   deleteTeacher: (id: string) => api.delete<ApiResponse<any>>(`/teachers/${id}`),
   getTeacherStats: () => api.get<ApiResponse<any>>('/teachers/stats'),
+  getTeacherSubjects: () => api.get<ApiResponse<any>>('/teachers/subjects'),
 };
 
 // Users API
 export const usersAPI = {
   getStudents: (params?: any) => api.get<ApiResponse<any>>('/users/students', { params }),
+  getStudentById: (id: string) => api.get<ApiResponse<any>>(`/users/students/${id}`),
+  updateStudent: (id: string, data: any) => api.put<ApiResponse<any>>(`/users/students/${id}`, data),
+  createStudent: (data: any) => api.post<ApiResponse<any>>('/users/students', data),
+  deleteStudent: (id: string) => api.delete<ApiResponse<any>>(`/users/students/${id}`),
   bulkUploadStudents: (data: FormData) => api.post<ApiResponse<any>>('/users/students/bulk', data),
 };
 
@@ -124,9 +133,21 @@ export const classesAPI = {
   deleteClass: (id: string) => api.delete<ApiResponse<any>>(`/classes/${id}`),
 };
 
+// Subjects API
+export const subjectsAPI = {
+  getSubjects: (params?: any) => api.get<ApiResponse<any>>('/subjects', { params }),
+  getSubjectById: (id: string) => api.get<ApiResponse<any>>(`/subjects/${id}`),
+  createSubject: (data: any) => api.post<ApiResponse<any>>('/subjects', data),
+  updateSubject: (id: string, data: any) => api.put<ApiResponse<any>>(`/subjects/${id}`, data),
+  deleteSubject: (id: string) => api.delete<ApiResponse<any>>(`/subjects/${id}`),
+};
+
 // Timetable API
 export const timetableAPI = {
   getTimetable: (params?: any) => api.get<ApiResponse<any>>('/timetable', { params }),
+  getTimetableByClass: (classId: string, params?: any) => api.get<ApiResponse<any>>(`/timetable/class/${classId}`, { params }),
+  getTimetableByTeacher: (teacherId: string, params?: any) => api.get<ApiResponse<any>>(`/timetable/teacher/${teacherId}`, { params }),
+  getTimetableStats: (params?: any) => api.get<ApiResponse<any>>('/timetable/stats', { params }),
   createTimetable: (data: any) => api.post<ApiResponse<any>>('/timetable', data),
   updateTimetable: (id: string, data: any) => api.put<ApiResponse<any>>(`/timetable/${id}`, data),
   deleteTimetable: (id: string) => api.delete<ApiResponse<any>>(`/timetable/${id}`),

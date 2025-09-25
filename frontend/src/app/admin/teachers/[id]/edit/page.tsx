@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,13 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuthStore } from '@/stores/authStore';
-import { teachersAPI } from '@/lib/api';
+import { teachersAPI, subjectsAPI } from '@/lib/api';
 import { Teacher, UpdateTeacherPayload } from '@/types';
 
 interface EditTeacherPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const editTeacherSchema = z.object({
@@ -29,6 +29,7 @@ const editTeacherSchema = z.object({
   employeeId: z.string().optional(),
   isClassTeacher: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  subjects: z.array(z.string()).optional(),
 });
 
 type EditTeacherForm = z.infer<typeof editTeacherSchema>;
@@ -37,30 +38,55 @@ export default function EditTeacherPage({ params }: EditTeacherPageProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Unwrap params for Next.js 15
+  const resolvedParams = use(params);
+  const teacherId = resolvedParams.id;
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm<EditTeacherForm>({
     resolver: zodResolver(editTeacherSchema),
   });
 
+  const selectedSubjects = watch('subjects') || [];
+
   useEffect(() => {
-    fetchTeacher();
-  }, [params.id]);
+    fetchData();
+  }, [teacherId]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching teacher data for ID:', teacherId);
+      await Promise.all([fetchTeacher(), fetchSubjects()]);
+      console.log('Data fetched successfully');
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchTeacher = async () => {
     try {
-      setLoading(true);
-      const response = await teachersAPI.getTeacherById(params.id);
+      console.log('Fetching teacher with ID:', teacherId);
+      const response = await teachersAPI.getTeacherById(teacherId);
+      console.log('Teacher API response:', response.data);
       
       if (response.data.success) {
         const teacherData = response.data.data;
+        console.log('Teacher data:', teacherData);
         setTeacher(teacherData);
         
         // Reset form with teacher data
@@ -74,13 +100,32 @@ export default function EditTeacherPage({ params }: EditTeacherPageProps) {
           employeeId: teacherData.teacher?.employeeId || '',
           isClassTeacher: teacherData.teacher?.isClassTeacher || false,
           isActive: teacherData.isActive,
+          subjects: teacherData.teacher?.subjects || [],
         });
+        console.log('Form reset with teacher data');
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch teacher');
       }
     } catch (err: unknown) {
-      setError('Failed to fetch teacher details');
       console.error('Error fetching teacher:', err);
-    } finally {
-      setLoading(false);
+      throw err; // Re-throw to be caught by fetchData
+    }
+  };
+
+  const fetchSubjects = async () => {
+    try {
+      console.log('Fetching subjects...');
+      const response = await subjectsAPI.getSubjects({ page: 1, limit: 100 });
+      console.log('Subjects API response:', response.data);
+      if (response.data.success) {
+        setSubjects(response.data.data);
+        console.log('Subjects set:', response.data.data);
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch subjects');
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching subjects:', err);
+      throw err; // Re-throw to be caught by fetchData
     }
   };
 
@@ -89,16 +134,20 @@ export default function EditTeacherPage({ params }: EditTeacherPageProps) {
       setIsSubmitting(true);
       setError('');
 
+      // Clean phone number - remove spaces, dashes, parentheses
+      const cleanPhone = data.phone ? data.phone.replace(/[\s\-\(\)]/g, '') : '';
+
       const payload: UpdateTeacherPayload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        phone: data.phone,
+        phone: cleanPhone || undefined,
         qualification: data.qualification,
         experienceYears: data.experienceYears ? parseInt(data.experienceYears) : undefined,
         employeeId: data.employeeId,
         isClassTeacher: data.isClassTeacher || false,
         isActive: data.isActive,
+        subjects: data.subjects,
       };
 
       const response = await teachersAPI.updateTeacher(teacherId, payload);
@@ -132,7 +181,7 @@ export default function EditTeacherPage({ params }: EditTeacherPageProps) {
     );
   }
 
-  if (error || !teacher) {
+  if (error || (!loading && !teacher)) {
     return (
       <DashboardLayout 
         title="Edit Teacher" 
@@ -232,9 +281,18 @@ export default function EditTeacherPage({ params }: EditTeacherPageProps) {
                   Phone
                 </label>
                 <Input
-                  placeholder="Enter phone number"
-                  {...register('phone')}
+                  type="tel"
+                  placeholder="Enter phone number (e.g., +1234567890)"
+                  {...register('phone', {
+                    pattern: {
+                      value: /^[\+]?[1-9][\d]{0,15}$/,
+                      message: 'Please enter a valid phone number'
+                    }
+                  })}
                 />
+                {errors.phone && (
+                  <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -267,6 +325,53 @@ export default function EditTeacherPage({ params }: EditTeacherPageProps) {
                   placeholder="0"
                   {...register('experienceYears')}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assigned Subjects
+                </label>
+                <div className="space-y-2">
+                  {subjects.map((subject) => (
+                    <div key={subject.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`subject-${subject.id}`}
+                        checked={selectedSubjects.includes(subject.name)}
+                        onChange={(e) => {
+                          const subjectName = subject.name;
+                          if (e.target.checked) {
+                            setValue('subjects', [...selectedSubjects, subjectName]);
+                          } else {
+                            setValue('subjects', selectedSubjects.filter(s => s !== subjectName));
+                          }
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label 
+                        htmlFor={`subject-${subject.id}`} 
+                        className="text-sm font-medium text-gray-700 cursor-pointer"
+                      >
+                        {subject.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {selectedSubjects.length > 0 && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800 font-medium mb-2">Selected Subjects:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedSubjects.map((subject, index) => (
+                        <span 
+                          key={index}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {subject}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3">

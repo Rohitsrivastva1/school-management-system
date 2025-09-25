@@ -54,6 +54,13 @@ const navigationItems = [
     teacherHref: '/teacher/homework'
   },
   {
+    name: 'Timetable',
+    href: '/admin/timetable',
+    icon: '📅',
+    roles: ['admin', 'class_teacher', 'subject_teacher'],
+    teacherHref: '/teacher/timetable'
+  },
+  {
     name: 'Reports',
     href: '/admin/reports',
     icon: '📈',
@@ -64,6 +71,31 @@ const navigationItems = [
     href: '/admin/settings',
     icon: '⚙️',
     roles: ['admin']
+  },
+  // Parent-specific navigation
+  {
+    name: 'Dashboard',
+    href: '/parent/dashboard',
+    icon: '🏠',
+    roles: ['parent']
+  },
+  {
+    name: 'Timetable',
+    href: '/parent/timetable',
+    icon: '📅',
+    roles: ['parent']
+  },
+  {
+    name: 'Attendance',
+    href: '/parent/attendance',
+    icon: '📊',
+    roles: ['parent']
+  },
+  {
+    name: 'Homework',
+    href: '/parent/homework',
+    icon: '📝',
+    roles: ['parent']
   }
 ];
 
@@ -76,35 +108,33 @@ export default function Sidebar({ schoolName, userRole }: SidebarProps) {
   );
 
   return (
-    <div className={`bg-white shadow-lg border-r border-gray-200 transition-all duration-300 ${
-      isCollapsed ? 'w-16' : 'w-64'
-    }`}>
+    <div className={`shadow-xl transition-all duration-300 h-full flex flex-col sidebar-container ${
+      isCollapsed ? 'w-16' : 'w-72'
+    }`} style={{backgroundColor: 'var(--primary-navy)'}}>
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b" style={{borderColor: 'rgba(255,255,255,0.1)'}}>
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div>
-              <h2 className="text-lg font-bold text-gray-900 truncate">
+              <h2 className="text-lg font-bold text-white truncate font-nunito">
                 {schoolName || 'School Management'}
               </h2>
-              <p className="text-xs text-gray-500 capitalize">
+              <p className="text-xs text-blue-200 capitalize">
                 {userRole?.replace('_', ' ')} Dashboard
               </p>
             </div>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2"
+            className="p-2 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-all duration-200"
           >
             {isCollapsed ? '→' : '←'}
-          </Button>
+          </button>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2">
+      <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
         {filteredItems.map((item) => {
           // Use teacher-specific href for teachers, admin href for admins
           const href = (userRole === 'class_teacher' || userRole === 'subject_teacher') && item.teacherHref 
@@ -114,10 +144,10 @@ export default function Sidebar({ schoolName, userRole }: SidebarProps) {
           return (
             <Link key={href} href={href}>
               <div
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-white text-gray-900 shadow-lg font-semibold'
+                    : 'text-blue-100 hover:bg-white hover:bg-opacity-10 hover:text-gray-900'
                 }`}
               >
                 <span className="text-lg">{item.icon}</span>
@@ -130,37 +160,40 @@ export default function Sidebar({ schoolName, userRole }: SidebarProps) {
         })}
       </nav>
 
-      {/* Quick Actions */}
-      {!isCollapsed && (
-        <div className="p-4 border-t border-gray-200 mt-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Quick Actions</h3>
+      {/* Quick Actions - visible to admin only */}
+      {!isCollapsed && userRole === 'admin' && (
+        <div className="p-4 border-t flex-shrink-0" style={{borderColor: 'rgba(255,255,255,0.1)'}}>
+          <h3 className="text-sm font-semibold text-white mb-3 flex items-center">
+            <span className="mr-2">⚡</span>
+            Quick Actions
+          </h3>
           <div className="space-y-2">
             <Link href="/admin/teachers/create">
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <span className="mr-2">👨‍🏫</span>
-                Add Teacher
-              </Button>
+              <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-200 border border-white/20">
+                <span className="flex items-center"><span className="mr-3 text-lg">👨‍🏫</span> <span className="font-medium">Add Teacher</span></span>
+                <span className="opacity-70">→</span>
+              </button>
             </Link>
             <Link href="/admin/students/create">
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <span className="mr-2">👥</span>
-                Add Student
-              </Button>
+              <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-200 border border-white/20">
+                <span className="flex items-center"><span className="mr-3 text-lg">👥</span> <span className="font-medium">Add Student</span></span>
+                <span className="opacity-70">→</span>
+              </button>
             </Link>
             <Link href="/admin/classes/create">
-              <Button variant="outline" size="sm" className="w-full justify-start">
-                <span className="mr-2">🏫</span>
-                Create Class
-              </Button>
+              <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-200 border border-white/20">
+                <span className="flex items-center"><span className="mr-3 text-lg">🏫</span> <span className="font-medium">Create Class</span></span>
+                <span className="opacity-70">→</span>
+              </button>
             </Link>
           </div>
         </div>
       )}
 
       {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-gray-50">
+      <div className="p-4 border-t flex-shrink-0" style={{borderColor: 'rgba(255,255,255,0.1)'}}>
         {!isCollapsed && (
-          <div className="text-xs text-gray-500 text-center">
+          <div className="text-xs text-blue-200 text-center">
             School Management System
           </div>
         )}

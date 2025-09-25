@@ -41,8 +41,15 @@ export const validateSchoolRegistration = [
   
   body('phone')
     .optional()
-    .isMobilePhone('any')
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      if (!value) return true; // Allow empty phone numbers
+      // More flexible phone validation - accepts various formats
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+        throw new Error('Please provide a valid phone number');
+      }
+      return true;
+    }),
   
   body('website')
     .optional()
@@ -85,8 +92,15 @@ export const validateTeacherCreation = [
   
   body('phone')
     .optional()
-    .isMobilePhone('any')
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      if (!value) return true; // Allow empty phone numbers
+      // More flexible phone validation - accepts various formats
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+        throw new Error('Please provide a valid phone number');
+      }
+      return true;
+    }),
   
   body('employeeId')
     .trim()
@@ -256,8 +270,15 @@ export const validateUserCreation = [
   
   body('phone')
     .optional()
-    .isMobilePhone('any')
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      if (!value) return true; // Allow empty phone numbers
+      // More flexible phone validation - accepts various formats
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+        throw new Error('Please provide a valid phone number');
+      }
+      return true;
+    }),
   
   handleValidationErrors
 ];
@@ -281,8 +302,15 @@ export const validateUserUpdate = [
   
   body('phone')
     .optional()
-    .isMobilePhone('any')
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      if (!value) return true; // Allow empty phone numbers
+      // More flexible phone validation - accepts various formats
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      if (!phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''))) {
+        throw new Error('Please provide a valid phone number');
+      }
+      return true;
+    }),
   
   body('isActive')
     .optional()

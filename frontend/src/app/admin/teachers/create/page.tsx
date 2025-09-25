@@ -50,12 +50,15 @@ export default function CreateTeacherPage() {
       setIsSubmitting(true);
       setError('');
 
+      // Clean phone number - remove spaces, dashes, parentheses
+      const cleanPhone = data.phone ? data.phone.replace(/[\s\-\(\)]/g, '') : '';
+
       const payload: CreateTeacherPayload = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         password: data.password,
-        phone: data.phone,
+        phone: cleanPhone || undefined,
         qualification: data.qualification,
         experienceYears: data.experienceYears ? parseInt(data.experienceYears) : undefined,
         subjects: data.subjects,
@@ -168,9 +171,18 @@ export default function CreateTeacherPage() {
                   Phone
                 </label>
                 <Input
-                  placeholder="Enter phone number"
-                  {...register('phone')}
+                  type="tel"
+                  placeholder="Enter phone number (e.g., +1234567890)"
+                  {...register('phone', {
+                    pattern: {
+                      value: /^[\+]?[1-9][\d]{0,15}$/,
+                      message: 'Please enter a valid phone number'
+                    }
+                  })}
                 />
+                {errors.phone && (
+                  <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

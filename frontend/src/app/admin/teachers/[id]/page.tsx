@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,15 +21,10 @@ export default function TeacherDetailPage({ params }: TeacherDetailPageProps) {
   const [teacher, setTeacher] = useState<Teacher | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [teacherId, setTeacherId] = useState<string>('');
 
-  useEffect(() => {
-    const initializeParams = async () => {
-      const resolvedParams = await params;
-      setTeacherId(resolvedParams.id);
-    };
-    initializeParams();
-  }, [params]);
+  // Unwrap params for Next.js 15
+  const resolvedParams = use(params);
+  const teacherId = resolvedParams.id;
 
   useEffect(() => {
     if (teacherId) {
@@ -40,14 +35,27 @@ export default function TeacherDetailPage({ params }: TeacherDetailPageProps) {
   const fetchTeacher = async () => {
     try {
       setLoading(true);
+      setError('');
+      console.log('Fetching teacher with ID:', teacherId);
       const response = await teachersAPI.getTeacherById(teacherId);
+      console.log('Teacher response:', response);
       
       if (response.data.success) {
         setTeacher(response.data.data);
       }
     } catch (err: unknown) {
-      setError('Failed to fetch teacher details');
       console.error('Error fetching teacher:', err);
+      
+      // Handle different types of errors
+      if ((err as any)?.code === 'NETWORK_ERROR' || (err as any)?.message === 'Network Error') {
+        setError('Unable to connect to the server. Please check if the backend server is running.');
+      } else if ((err as any)?.response?.status === 404) {
+        setError('Teacher not found. The requested teacher does not exist.');
+      } else if ((err as any)?.response?.status === 401) {
+        setError('Unauthorized. Please log in again.');
+      } else {
+        setError('Failed to fetch teacher details. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

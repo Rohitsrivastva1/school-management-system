@@ -20,13 +20,13 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Class management routes (Admin and Class Teachers)
+// Class management routes (Admin, Class Teachers, and Subject Teachers)
 router.post('/', authorize(UserRole.ADMIN, UserRole.CLASS_TEACHER), validateClassCreation, createClass);
-router.get('/', authorize(UserRole.ADMIN, UserRole.CLASS_TEACHER), validatePagination, getClasses);
+router.get('/', authorize(UserRole.ADMIN, UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER), validatePagination, getClasses);
 router.get('/stats', authorize(UserRole.ADMIN), getClassStats);
 
 // Individual class routes
-router.get('/:classId', authorize(UserRole.ADMIN, UserRole.CLASS_TEACHER), validateUUID('classId'), getClassDetails);
+router.get('/:classId', authorize(UserRole.ADMIN, UserRole.CLASS_TEACHER, UserRole.SUBJECT_TEACHER), validateUUID('classId'), getClassDetails);
 router.put('/:classId', authorize(UserRole.ADMIN, UserRole.CLASS_TEACHER), validateUUID('classId'), updateClass);
 router.delete('/:classId', authorize(UserRole.ADMIN), validateUUID('classId'), deleteClass);
 

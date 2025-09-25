@@ -126,7 +126,9 @@ export const getTeachers = asyncHandler(async (req: Request, res: Response): Pro
 
   const whereClause = {
     schoolId,
-    role: UserRole.SUBJECT_TEACHER,
+    role: {
+      in: [UserRole.SUBJECT_TEACHER, UserRole.CLASS_TEACHER]
+    },
     ...(search && {
       OR: [
         { firstName: { contains: search as string, mode: 'insensitive' as const } },
@@ -197,7 +199,9 @@ export const getTeacherById = asyncHandler(async (req: Request, res: Response): 
     where: {
       id,
       schoolId,
-      role: UserRole.SUBJECT_TEACHER
+      role: {
+        in: [UserRole.SUBJECT_TEACHER, UserRole.CLASS_TEACHER]
+      }
     },
     include: {
       teacher: true,
@@ -247,7 +251,8 @@ export const updateTeacher = asyncHandler(async (req: Request, res: Response): P
     experienceYears, 
     employeeId,
     isClassTeacher,
-    isActive 
+    isActive,
+    subjects
   } = req.body;
 
   const schoolId = req.user?.schoolId;
@@ -266,7 +271,9 @@ export const updateTeacher = asyncHandler(async (req: Request, res: Response): P
     where: {
       id,
       schoolId,
-      role: UserRole.SUBJECT_TEACHER
+      role: {
+        in: [UserRole.SUBJECT_TEACHER, UserRole.CLASS_TEACHER]
+      }
     },
     include: {
       teacher: true
@@ -325,6 +332,7 @@ export const updateTeacher = asyncHandler(async (req: Request, res: Response): P
         qualification,
         experienceYears: experienceYears ? parseInt(experienceYears) : null,
         isClassTeacher: isClassTeacher || false,
+        subjects: subjects ? (Array.isArray(subjects) ? subjects : subjects.split(',').map((s: string) => s.trim())) : undefined,
       },
     });
 
@@ -444,4 +452,86 @@ export const getTeacherStats = asyncHandler(async (req: Request, res: Response):
       inactiveTeachers: totalTeachers - activeTeachers
     }
   });
+});
+
+// Get Teacher's Subjects
+export const getTeacherSubjects = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const schoolId = req.user!.schoolId;
+  const userId = req.user!.userId;
+
+  try {
+    // Get teacher's subjects from timetable (more accurate than the subjects array)
+    const timetableSubjects = await prisma.timetable.findMany({
+      where: {
+        teacherId: userId,
+        isActive: true,
+        class: {
+          schoolId
+        }
+      },
+      include: {
+        subject: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        }
+      },
+      distinct: ['subjectId']
+    });
+
+    // Extract unique subjects
+    const subjects = timetableSubjects.map(tt => tt.subject);
+
+    // If no subjects from timetable, fall back to teacher's subjects array
+    if (subjects.length === 0) {
+      const teacher = await prisma.teacher.findFirst({
+        where: {
+          userId,
+          user: {
+            schoolId
+          }
+        },
+        select: {
+          subjects: true
+        }
+      });
+
+      if (teacher && teacher.subjects.length > 0) {
+        // Get subject details for the subjects in the array
+        const subjectDetails = await prisma.subject.findMany({
+          where: {
+            schoolId,
+            name: {
+              in: teacher.subjects
+            }
+          },
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        });
+
+        res.json({
+          success: true,
+          data: subjectDetails
+        });
+        return;
+      }
+    }
+
+    res.json({
+      success: true,
+      data: subjects
+    });
+  } catch (error) {
+    console.error('Error fetching teacher subjects:', error);
+    res.status(500).json({
+      success: false,
+      error: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to fetch teacher subjects'
+    });
+  }
 });

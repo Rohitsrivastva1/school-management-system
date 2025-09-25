@@ -243,8 +243,10 @@ export const getStudents = asyncHandler(async (req: Request, res: Response): Pro
 
   // Build where clause
   const where: any = {
-    user: { schoolId },
-    role: UserRole.STUDENT
+    user: { 
+      schoolId,
+      role: UserRole.STUDENT
+    }
   };
 
   if (classId) {
@@ -397,5 +399,323 @@ export const deleteUser = asyncHandler(async (req: Request, res: Response): Prom
   res.json({
     success: true,
     message: 'User deactivated successfully'
+  });
+});
+
+// Get Student by ID
+export const getStudentById = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const schoolId = req.user!.schoolId;
+
+  const student = await prisma.student.findFirst({
+    where: {
+      id,
+      user: {
+        schoolId,
+        role: UserRole.STUDENT
+      }
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          dateOfBirth: true,
+          gender: true,
+          isActive: true,
+          createdAt: true
+        }
+      },
+      class: {
+        select: {
+          id: true,
+          name: true,
+          section: true
+        }
+      }
+    }
+  });
+
+  if (!student) {
+    res.status(404).json({
+      success: false,
+      error: 'NOT_FOUND',
+      message: 'Student not found'
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    data: student
+  });
+});
+
+// Update Student
+export const updateStudent = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const schoolId = req.user!.schoolId;
+  const updateData = req.body;
+
+  // Verify student belongs to the same school
+  const existingStudent = await prisma.student.findFirst({
+    where: {
+      id,
+      user: {
+        schoolId,
+        role: UserRole.STUDENT
+      }
+    },
+    include: {
+      user: true
+    }
+  });
+
+  if (!existingStudent) {
+    res.status(404).json({
+      success: false,
+      error: 'NOT_FOUND',
+      message: 'Student not found'
+    });
+    return;
+  }
+
+  // Update in transaction
+  const result = await prisma.$transaction(async (tx: any) => {
+    // Update user data
+    const updatedUser = await tx.user.update({
+      where: { id: existingStudent.userId },
+      data: {
+        firstName: updateData.firstName,
+        lastName: updateData.lastName,
+        email: updateData.email,
+        phone: updateData.phone,
+        dateOfBirth: updateData.dateOfBirth ? new Date(updateData.dateOfBirth) : undefined,
+        gender: updateData.gender,
+        isActive: updateData.isActive
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        dateOfBirth: true,
+        gender: true,
+        isActive: true,
+        updatedAt: true
+      }
+    });
+
+    // Update student data
+    const updatedStudent = await tx.student.update({
+      where: { id },
+      data: {
+        fatherName: updateData.fatherName,
+        motherName: updateData.motherName,
+        fatherPhone: updateData.fatherPhone,
+        motherPhone: updateData.motherPhone,
+        fatherEmail: updateData.fatherEmail,
+        motherEmail: updateData.motherEmail,
+        bloodGroup: updateData.bloodGroup,
+        transportMode: updateData.transportMode,
+        busRoute: updateData.busRoute,
+        emergencyContact: updateData.emergencyContact,
+        isActive: updateData.isActive
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            dateOfBirth: true,
+            gender: true,
+            isActive: true,
+            createdAt: true
+          }
+        },
+        class: {
+          select: {
+            id: true,
+            name: true,
+            section: true
+          }
+        }
+      }
+    });
+
+    return updatedStudent;
+  });
+
+  res.json({
+    success: true,
+    data: result,
+    message: 'Student updated successfully'
+  });
+});
+
+// Create Student
+export const createStudent = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const schoolId = req.user!.schoolId;
+  const {
+    email,
+    firstName,
+    lastName,
+    phone,
+    dateOfBirth,
+    gender,
+    classId,
+    rollNumber,
+    admissionNumber,
+    fatherName,
+    motherName,
+    fatherPhone,
+    motherPhone,
+    fatherEmail,
+    motherEmail,
+    bloodGroup,
+    transportMode,
+    busRoute,
+    emergencyContact
+  } = req.body;
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findFirst({
+    where: { email, schoolId }
+  });
+
+  if (existingUser) {
+    res.status(409).json({
+      success: false,
+      error: 'CONFLICT',
+      message: 'User with this email already exists'
+    });
+    return;
+  }
+
+  // Generate temporary password
+  const tempPassword = 'TempPass123!';
+  const passwordHash = await hashPassword(tempPassword);
+
+  // Create user and student in a transaction
+  const result = await prisma.$transaction(async (tx: any) => {
+    // Create user
+    const user = await tx.user.create({
+      data: {
+        schoolId,
+        email,
+        passwordHash,
+        role: UserRole.STUDENT,
+        firstName,
+        lastName,
+        phone,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        gender,
+        isActive: true,
+        emailVerified: true
+      }
+    });
+
+    // Create student
+    const student = await tx.student.create({
+      data: {
+        userId: user.id,
+        classId,
+        rollNumber,
+        admissionNumber: admissionNumber || `ADM${Date.now()}`,
+        fatherName,
+        motherName,
+        fatherPhone,
+        motherPhone,
+        fatherEmail,
+        motherEmail,
+        bloodGroup,
+        transportMode,
+        busRoute,
+        emergencyContact,
+        admissionDate: new Date(),
+        isActive: true
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            dateOfBirth: true,
+            gender: true,
+            isActive: true,
+            createdAt: true
+          }
+        },
+        class: {
+          select: {
+            id: true,
+            name: true,
+            section: true
+          }
+        }
+      }
+    });
+
+    return student;
+  });
+
+  res.status(201).json({
+    success: true,
+    data: result,
+    message: 'Student created successfully'
+  });
+});
+
+// Delete Student
+export const deleteStudent = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const schoolId = req.user!.schoolId;
+
+  // Verify student belongs to the same school
+  const student = await prisma.student.findFirst({
+    where: {
+      id,
+      user: {
+        schoolId,
+        role: UserRole.STUDENT
+      }
+    }
+  });
+
+  if (!student) {
+    res.status(404).json({
+      success: false,
+      error: 'NOT_FOUND',
+      message: 'Student not found'
+    });
+    return;
+  }
+
+  // Soft delete by setting isActive to false
+  await prisma.$transaction(async (tx: any) => {
+    await tx.user.update({
+      where: { id: student.userId },
+      data: { isActive: false }
+    });
+    
+    await tx.student.update({
+      where: { id },
+      data: { isActive: false }
+    });
+  });
+
+  res.json({
+    success: true,
+    message: 'Student deactivated successfully'
   });
 });
