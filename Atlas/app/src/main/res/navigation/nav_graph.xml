@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.nexusapps.atlas.ui.auth.LoginFragment"
+        android:label="Login" />
+
+    <fragment
+        android:id="@+id/teacherDashboardFragment"
+        android:name="com.nexusapps.atlas.ui.dashboard.TeacherDashboardFragment"
+        android:label="Teacher Dashboard" />
+
+    <fragment
+        android:id="@+id/parentDashboardFragment"
+        android:name="com.nexusapps.atlas.ui.dashboard.ParentDashboardFragment"
+        android:label="Parent Dashboard" />
+
+    <fragment
+        android:id="@+id/adminDashboardFragment"
+        android:name="com.nexusapps.atlas.ui.dashboard.AdminDashboardFragment"
+        android:label="Admin Dashboard" />
+
+    <fragment
+        android:id="@+id/teacherClassesFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.ClassesFragment"
+        android:label="Classes" />
+
+    <fragment
+        android:id="@+id/teacherAttendanceFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.AttendanceFragment"
+        android:label="Attendance" />
+
+    <fragment
+        android:id="@+id/markAttendanceFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.MarkAttendanceFragment"
+        android:label="Mark Attendance" />
+
+    <fragment
+        android:id="@+id/teacherHomeworkFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.HomeworkFragment"
+        android:label="Homework" />
+
+    <fragment
+        android:id="@+id/createHomeworkFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.CreateHomeworkFragment"
+        android:label="Create Homework" />
+
+    <fragment
+        android:id="@+id/teacherTimetableFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.TimetableFragment"
+        android:label="Timetable" />
+
+    <fragment
+        android:id="@+id/viewStudentsFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.ViewStudentsFragment"
+        android:label="View Students" />
+
+    <fragment
+        android:id="@+id/studentsFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.StudentsFragment"
+        android:label="Students" />
+
+    <fragment
+        android:id="@+id/classesFragment"
+        android:name="com.nexusapps.atlas.ui.teacher.ClassesFragment"
+        android:label="Classes" />
+
+</navigation>
+
+

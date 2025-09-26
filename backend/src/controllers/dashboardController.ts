@@ -263,6 +263,12 @@ export const getAdminDashboard = asyncHandler(async (req: Request, res: Response
     ? Math.round((presentRecords / totalAttendanceRecords) * 100) 
     : 0;
 
+  // Normalize BigInt from raw queries for JSON serialization
+  const systemHealthSafe = (Array.isArray(systemHealth) ? systemHealth : []).map((row: any) => ({
+    total_records: typeof row.total_records === 'bigint' ? Number(row.total_records) : row.total_records,
+    table_name: String(row.table_name)
+  }));
+
   res.json({
     success: true,
     data: {
@@ -322,7 +328,7 @@ export const getAdminDashboard = asyncHandler(async (req: Request, res: Response
         subjects: teacher.subjects
       })),
       systemHealth: {
-        totalRecords: systemHealth,
+        totalRecords: systemHealthSafe,
         lastUpdated: new Date().toISOString()
       }
     }

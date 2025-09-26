@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    
+    <group android:checkableBehavior="single">
+        
+        <item
+            android:id="@+id/teacherDashboardFragment"
+            android:icon="@drawable/ic_dashboard"
+            android:title="Dashboard"
+            app:actionLayout="@layout/nav_menu_item" />
+
+        <item
+            android:id="@+id/teacherClassesFragment"
+            android:icon="@drawable/ic_classes"
+            android:title="Classes"
+            app:actionLayout="@layout/nav_menu_item" />
+
+        <item
+            android:id="@+id/teacherStudentsFragment"
+            android:icon="@drawable/ic_students"
+            android:title="Students"
+            app:actionLayout="@layout/nav_menu_item" />
+
+        <item
+            android:id="@+id/teacherAttendanceFragment"
+            android:icon="@drawable/ic_attendance"
+            android:title="Attendance"
+            app:actionLayout="@layout/nav_menu_item" />
+
+        <item
+            android:id="@+id/teacherHomeworkFragment"
+            android:icon="@drawable/ic_homework"
+            android:title="Homework"
+            app:actionLayout="@layout/nav_menu_item" />
+
+        <item
+            android:id="@+id/teacherTimetableFragment"
+            android:icon="@drawable/ic_timetable"
+            android:title="Timetable"
+            app:actionLayout="@layout/nav_menu_item" />
+
+        <item
+            android:id="@+id/teacherReportsFragment"
+            android:icon="@drawable/ic_reports"
+            android:title="Reports"
+            app:actionLayout="@layout/nav_menu_item" />
+
+    </group>
+
+    <!-- Divider -->
+    <item android:title="">
+        <menu>
+            <item
+                android:id="@+id/divider"
+                android:title=""
+                android:enabled="false"
+                app:actionLayout="@layout/nav_divider" />
+        </menu>
+    </item>
+
+    <!-- Settings and Logout -->
+    <group>
+        <item
+            android:id="@+id/teacherSettingsFragment"
+            android:icon="@drawable/ic_settings"
+            android:title="Settings"
+            app:actionLayout="@layout/nav_menu_item" />
+
+        <item
+            android:id="@+id/logout"
+            android:icon="@drawable/ic_logout"
+            android:title="Logout"
+            app:actionLayout="@layout/nav_menu_item" />
+
+    </group>
+
+</menu>

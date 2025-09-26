@@ -1,3 +1,167 @@
+# School Management App - UI/UX Specification
+
+## 1. Information Architecture
+
+- Primary roles: Admin, Class Teacher, Subject Teacher, Parent, Student
+- Global navigation (role-aware): Dashboard, Classes, Timetable, Attendance, Homework, Notifications, Q&A, Complaints, Files, Analytics (admin), Settings/Profile
+- Authentication: Login, Forgot password (future), Logout
+
+## 2. Navigation & Routing
+
+- Persistent top bar: school logo/name, role switch (if multi-role), quick search, profile avatar menu
+- Left sidebar (collapsible): context-aware menu per role
+- Breadcrumbs inside content area for deep pages
+
+## 3. Screen Blueprints and API Mapping
+
+Notes:
+- Base URL: /api/v1
+- Auth: Authorization: Bearer <token>
+- Use optimistic UI where safe; otherwise show determinate loaders.
+
+### 3.1 Auth
+- Login
+  - Inputs: email, password
+  - API: POST /auth/login
+  - Success: store tokens, fetch GET /auth/profile, route to role default dashboard
+  - Errors: 400/401 → inline field errors and toast
+
+### 3.2 Dashboard
+- Admin Dashboard
+  - API: GET /dashboard/admin
+  - Widgets: Overview KPIs, charts (attendance trend, class performance), recent activities
+- Teacher Dashboard
+  - API: GET /dashboard/teacher
+  - Widgets: Today’s classes, pending homework, quick mark attendance
+- Parent Dashboard
+  - API: GET /dashboard/parent?studentId=uuid
+  - Widgets: Attendance summary, notifications, homework due
+- Student Dashboard
+  - API: GET /dashboard/student
+  - Widgets: Today’s timetable, homework due, notifications
+
+### 3.3 Classes (Admin, Class/Subject Teacher)
+- List
+  - API: GET /classes?page&limit&academicYear
+  - Table: name, section, teacher, room, students, actions
+  - Empty: CTA to Create Class (if permitted)
+- Create/Edit
+  - APIs: POST /classes, PUT /classes/{classId}
+  - Validation: required name, section, academicYear, classTeacherId
+- Details
+  - API: GET /classes/{classId}
+  - Tabs: Overview, Students, Timetable, Attendance, Homework
+
+### 3.4 Users - Teachers and Students
+- Teachers (Admin)
+  - List: GET /users/teachers?page&limit&search
+  - Create: POST /users/teachers
+- Students (Admin, Class Teacher)
+  - List: GET /users/students?classId&page&limit
+  - Bulk import: POST /users/students/bulk (CSV upload)
+  - CRUD: POST/PUT/DELETE /users/students/{id}
+
+### 3.5 Timetable
+- Class/Teacher timetable views (week grid)
+  - APIs: GET /timetable/class/{classId}, GET /timetable/teacher/{teacherId}
+- Admin management
+  - CRUD: POST /timetable, PUT /timetable/{id}, DELETE /timetable/{id}
+  - Validation: overlapping periods, time range, teacher availability
+
+### 3.6 Attendance
+- Mark attendance (class session)
+  - API: POST /attendance/mark
+  - Form: date, list of students with Present/Absent/Late, remarks
+- Browse
+  - By class: GET /attendance/class/{classId}?page&limit
+  - By student: GET /attendance/student/{studentId}?page&limit
+  - Stats: GET /attendance/stats?classId&studentId&period
+  - Edit/Delete: PUT/DELETE /attendance/{attendanceId}
+
+### 3.7 Homework
+- List and filters (class, teacher, date)
+  - APIs: GET /homework, /homework/class/{classId}, /homework/teacher/{teacherId}
+- Create/Edit
+  - APIs: POST /homework (multipart), PUT /homework/{homeworkId}
+  - Publish: PATCH /homework/{homeworkId}/publish
+- Detail
+  - API: GET /homework/{homeworkId}
+  - Attachments via Files module
+
+### 3.8 Notifications
+- Inbox with filters
+  - APIs: GET /notifications, GET /notifications/{notificationId}
+  - Mark read: PUT /notifications/{notificationId}/read
+- Create (Admin, Class Teacher)
+  - API: POST /notifications
+
+### 3.9 Q&A
+- Threads list and details
+  - APIs: GET /qa, GET /qa/{messageId}
+- Create and reply
+  - APIs: POST /qa, PUT /qa/{messageId}/reply, PUT /qa/{messageId}/status
+
+### 3.10 Complaints
+- List and details
+  - APIs: GET /complaints, GET /complaints/{complaintId}
+- Create/Update/Resolve/Delete
+  - APIs: POST /complaints, PUT /complaints/{complaintId}, PUT /complaints/{complaintId}/resolve, DELETE /complaints/{complaintId}
+
+### 3.11 Files
+- Upload and browse
+  - APIs: POST /files/upload, GET /files/{fileId}, DELETE /files/{fileId}, GET /files/stats/overview
+
+### 3.12 Subjects
+- List/CRUD (Admin)
+  - APIs: GET /subjects, GET /subjects/{id}, POST /subjects, PUT /subjects/{id}, DELETE /subjects/{id}
+
+### 3.13 Analytics (Admin)
+- Overview and reports
+  - APIs: GET /analytics/attendance|performance|class|teacher|student|school
+
+## 4. Component States & Patterns
+
+- Loading: skeletons for tables/cards; spinner for modal submits
+- Empty: explanation + primary CTA; secondary import/upload where relevant
+- Error: inline field errors for 4xx; toast/banner for 5xx; retry CTA
+- Validation: disable submit until valid; server errors mapped to fields
+- Pagination: server-driven with page/limit; show total and pages
+- Search/Filters: debounced 300ms; query params in URL for shareability
+
+## 5. Forms & Validation Rules (high-level)
+
+- Required: email (format), password (min 8, complexity), names (letters and spaces), dates (ISO)
+- IDs: UUID format where applicable
+- Files: max 10MB; allowed types as per backend
+
+## 6. Accessibility & Usability
+
+- Keyboard navigability, focus outlines, ARIA for interactive components
+- Color contrast WCAG AA minimum; avoid color-only signals
+- Announce async updates (loading/success/error) to screen readers
+
+## 7. Visual Language
+
+- Design tokens: primary, surface, muted; spacing scale 4/8; radius 8
+- Components: AppShell, DataTable, Form, Modal, Tabs, EmptyState, Toast
+
+## 8. Default Routes by Role
+
+- Admin → /dashboard/admin
+- Class/Subject Teacher → /dashboard/teacher
+- Parent → /dashboard/parent?studentId={firstChildId}
+- Student → /dashboard/student
+
+## 9. Security & Session
+
+- Store access token in memory; refresh token rotation; logout clears all
+- 401 interceptor → route to /login; preserve intended route
+
+## 10. Example Flow Diagrams (text)
+
+- Create Class: open modal → validate → POST /classes → success toast → refetch GET /classes → close modal
+- Mark Attendance: open session → toggle statuses → POST /attendance/mark → success → update local list → optional export
+
 # 🎨 School Management System - Frontend Development Plan
 
 ## 📋 System Overview
